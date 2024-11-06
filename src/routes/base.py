@@ -7,7 +7,7 @@ import logging
 
 
 base_router = APIRouter(
-    prefix = "api/v1",
+    prefix = "/api/v1",
     tags = ["api_v1"]
 )
 

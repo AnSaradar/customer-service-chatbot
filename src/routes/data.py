@@ -2,10 +2,13 @@ from fastapi import FastAPI, APIRouter, Depends, UploadFile, status
 from fastapi.responses import JSONResponse
 import os
 from helpers.config import get_settings, Settings
-from controllers import DataController, ProjectController
+from controllers import DataController, ProjectController, ProcessController
 import aiofiles
 from models.enums import ResponseSignal
+from .requests_schemes import ProcessRequest
 import logging
+from bson import json_util
+import json
 
 logger = logging.getLogger('uvicorn.error')
 
@@ -39,7 +42,34 @@ async def upload_file(project_id: str, file: UploadFile, app_settings: Settings 
     
 
     return JSONResponse(status_code=status.HTTP_200_OK, content={"signal": ResponseSignal.FILE_UPLOADED_SUCCESS.value})
-    
+
+
+
+@data_router.post('/process/{project_id}/')
+async def process_file(project_id : str, process_request : ProcessRequest):
+
+    chunk_size = process_request.chunk_size
+    overlap_size = process_request.overlap_size
+
+    process_controller = ProcessController(project_id=project_id)
+
+    # Get The storing path for the uploaded file  
+    project_dir_path = ProjectController().get_project_path(project_id=project_id)
+    logger.info(f"Info from the Logger : project_folder:{project_dir_path},{type(project_dir_path)}")
+
+    files_names = ProjectController().get_all_the_files_names_inside_folder(folder_path=project_dir_path)
+    all_files_contents = []
+    for file_name in files_names:
+        file_content = process_controller.get_file_content(file_id=file_name)
+        logger.info(f"Info from the Logger : file_content:{file_name},{type(file_content)}")
+        chunks = process_controller.process_file_content(file_content=file_content,chunk_size=chunk_size,overlap_size=overlap_size)
+        #logger.info(f"Info from the Logger : file_content:{chunks}")
+        file_info = {'file_name': file_name, 'file_content': chunks}
+        all_files_contents.append(file_info)
+        
+
+
+    return JSONResponse(status_code=status.HTTP_200_OK, content={"signal": ResponseSignal.FILES_PROCESSING_SUCCESS.value, "content": json.loads(json_util.dumps(all_files_contents))})
 
     
 

@@ -5,7 +5,7 @@ from helpers.config import Settings, get_settings
 import logging
 
 app = FastAPI()
-logging.basicConfig(level=logging.INFO)
+#logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('uvivorn.error')
 
 @app.on_event("startup")

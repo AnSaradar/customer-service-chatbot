@@ -1,6 +1,7 @@
 from .BaseController import BaseController
 import os
 import logging
+import shutil
 
 
 
@@ -37,5 +38,23 @@ class ProjectController(BaseController):
             return []
         except Exception as e:
             logger.error(f"An error occurred: {e}")
-            return []   
+            return []
+
+
+
+def delete_all_files_in_folder(folder_path):
+    try:
+        # Iterate through each item in the folder
+        for item in os.listdir(folder_path):
+            item_path = os.path.join(folder_path, item)
+            # Check if item is a file or directory and delete accordingly
+            if os.path.isfile(item_path):
+                os.remove(item_path)  # Remove the file
+            elif os.path.isdir(item_path):
+                shutil.rmtree(item_path)  # Remove the directory and its contents
+        logger.info("All files and directories inside the folder have been deleted.")
+    except FileNotFoundError:
+        logger.error("The specified folder path does not exist.")
+    except Exception as e:
+        logger.error(f"An error occurred: {e}") 
        

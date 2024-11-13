@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  # MongoDB Service
+  mongodb:
+    image: mongo:7-jammy
+
+    container_name: mongodb-container
+
+    ports:
+      - "27007:27017"
+    
+    volumes:
+      - ./mongodb:/data/db
+    
+    networks:
+      - backend
+    
+    restart: always
+
+
+networks:
+  backend:

@@ -45,7 +45,9 @@ class ProcessController(BaseController):
         return None
     
 
-    def process_file_content(self, file_content : list, chunk_size : int = 500, overlap_size : int = 20):
+    def process_file_content(self, file_content : list, file_id : str, chunk_size : int = 500, overlap_size : int = 20):
+
+        # file_id / File Name, we can use it later in the storing method 
 
         text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=chunk_size,

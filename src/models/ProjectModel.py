@@ -9,7 +9,7 @@ class ProjectModel(BaseDataModel):
     
 
     async def create_project(self, project : Project):
-        result = await self.collection.insert_one(project.dict())   # to convert from pydantic object to dictinonary to insert inside the mongodb
+        result = await self.collection.insert_one(project.dict(by_alias=True, exclude_unset=True))   # to convert from pydantic object to dictinonary to insert inside the mongodb
         project._id = result.inserted_id  # set the returned mongodb id from the insert operation
         return project
 

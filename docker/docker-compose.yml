@@ -18,6 +18,25 @@ services:
     
     restart: always
 
+  
+  qdrant:
+    image: qdrant/qdrant
+
+    container_name: qdrant-container
+
+    ports:
+      - "6334:6333"
+    
+    volumes:
+      - ./qdrant:/data/db
+    
+    networks:
+      - backend
+      
+    restart: always
+
+    
+
 
 networks:
   backend:

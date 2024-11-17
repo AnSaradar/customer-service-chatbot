@@ -10,3 +10,6 @@ Motor==3.1.1
 pymongo==4.3.3
 pydantic-mongo==2.3.0
 qdrant-client==1.10.1
+openai==1.35.13
+cohere==5.5.8
+

@@ -35,6 +35,11 @@ class Settings(BaseSettings):
     DEFAULT_GENERATION_MAX_OUTPUT_TOKENS : int = None
     DEFAULT_GENERATION_TEMPREATUER : float = None
 
+    VECTORDB_BACKEND : str
+    VECTORDB_PATH : str
+    VECTORDB_DISTANCE_METHOD : str
+
+
 
 
     class Config(SettingsConfigDict):

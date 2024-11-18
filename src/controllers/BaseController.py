@@ -12,3 +12,19 @@ class BaseController:
             self.base_dir,
             "assets/files"
         ) 
+
+        self.database_dir = os.path.join(
+            self.base_dir,
+            "assets/database"
+        )
+    
+
+    def get_vector_database_path(self, db_name):
+        database_path = os.path.join(
+            self.database_dir,
+            db_name
+        )
+        if not os.path.exists(database_path):
+            os.makedirs(database_path)
+        
+        return database_path

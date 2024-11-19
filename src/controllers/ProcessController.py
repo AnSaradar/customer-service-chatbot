@@ -5,12 +5,14 @@ from langchain_community.document_loaders import TextLoader
 from langchain_community.document_loaders import PyMuPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 import os
+import logging
 
 class ProcessController(BaseController):
     def __init__(self, project_id : str):
         super().__init__()
         self.project_id = project_id
         self.project_path = ProjectController().get_project_path(project_id=self.project_id)
+        self.logger = logging.getLogger(__name__)
 
     
     def get_file_extension(self, file_id : str):
@@ -19,12 +21,14 @@ class ProcessController(BaseController):
     def get_file_loader(self , file_id : str):
 
         file_ext = self.get_file_extension(file_id)
+        #self.logger.info(f"File Extension: {file_ext}")
         file_path = os.path.join(
             self.project_path,
             file_id
         )
 
-        if not os.path.exists(file_path): # file doesn't exists, NOT FOUND 
+        if not os.path.exists(file_path):
+            self.logger.error(f"file doesn't exists, NOT FOUND, {file_path}") # file doesn't exists, NOT FOUND 
             return None
 
         if file_ext == ProcessingEnum.PDF.value:
@@ -42,12 +46,20 @@ class ProcessController(BaseController):
         if loader:
             return loader.load()
         
-        return None
+        else:
+            self.logger.error(f"No file loader found for file_id: {file_id}")
+            return None
+        
+        
     
 
     def process_file_content(self, file_content : list, file_id : str, chunk_size : int = 500, overlap_size : int = 20):
 
         # file_id / File Name, we can use it later in the storing method 
+
+        if file_content is None:
+            self.logger.error(f"No file content to process for file_id: {file_id}")
+            return None
 
         text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=chunk_size,

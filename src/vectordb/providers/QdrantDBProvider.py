@@ -21,7 +21,7 @@ class QdrantDBProvider(VectorDBInterface):
         
     
     def connect(self):
-        self.client = QdrantClient(db_path=self.db_path)
+        self.client = QdrantClient(path=self.db_path)
         self.logger.info("Qdrant Provider : Connected")
     
     def disconnect(self):
@@ -41,7 +41,7 @@ class QdrantDBProvider(VectorDBInterface):
         if self.is_collection_exist(collection_name = collection_name):
             return self.client.delete_collection(collection_name = collection_name)
         else:
-            self.logger.error(f"Qdrant Provider (delete_collection) : Collection '{collection_name}' does not exist.")
+            self.logger.info(f"Qdrant Provider (delete_collection) : Collection '{collection_name}' does not exist already.")
     
     def create_collection(self, collection_name : str,
                           embedding_size : int,do_reset : bool = False):
@@ -50,7 +50,7 @@ class QdrantDBProvider(VectorDBInterface):
         
         if not self.is_collection_exist(collection_name = collection_name):
             self.client.create_collection(collection_name = collection_name,
-                                        vectos_config = models.VectorParams(
+                                          vectors_config = models.VectorParams(
                                             size = embedding_size,
                                             distance = self.distance_method,
                                         ))
@@ -75,6 +75,7 @@ class QdrantDBProvider(VectorDBInterface):
                 collection_name = collection_name,
                 records = [
                     models.Record(
+                        id = record_id,
                         vector = vector,
                         payload={
                             "text" : text,
@@ -104,7 +105,7 @@ class QdrantDBProvider(VectorDBInterface):
             metadatas = [None] * len(texts)
         
         if record_ids is None:
-            record_ids = [None] * len(texts)
+            record_ids = list(range(0, len(texts)))
         
         for i in range(0, len(texts), batch_size):
             batch_end = i + batch_size
@@ -117,10 +118,11 @@ class QdrantDBProvider(VectorDBInterface):
             batch_records = [
 
                 models.Record(
-                    vector = batch_vectors,
+                    id = batch_record_ids[x],
+                    vector = batch_vectors[x],
                     payload={
-                        "text" : batch_texts,
-                        "metadata" : batch_metadatas,
+                        "text" : batch_texts[x],
+                        "metadata" : batch_metadatas[x],
                     }
                 )
 

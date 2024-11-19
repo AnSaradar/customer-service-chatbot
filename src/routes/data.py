@@ -23,7 +23,7 @@ data_router = APIRouter(
 async def upload_file(request : Request, project_id: str, file: UploadFile, app_settings: Settings = Depends(get_settings)):
 
     project_model = ProjectModel(db_client = request.app.db_client)
-    project = await project_model.get_project_or_create_one(project_id=project_id)
+    _ = await project_model.get_project_or_create_one(project_id=project_id)
 
 
     # Validate the uploaded file
@@ -89,6 +89,11 @@ async def process_file(request : Request, project_id : str, process_request : Pr
 
 
     file_content = process_controller.get_file_content(file_id=file_id)
+    if file_content is None:
+        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content={
+            "signal": ResponseSignal.FILES_PROCESSING_FAILED.value,
+            })
+
 
     file_chunks = process_controller.process_file_content(
         file_content=file_content,

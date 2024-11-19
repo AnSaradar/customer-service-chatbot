@@ -19,7 +19,7 @@ class CoHereProvider(LLMInterface):
         self.embedding_model_id = None
         self.embedding_size = None
 
-        self.client = cohere.CohereClient(api_key=self.api_key)
+        self.client = cohere.Client(api_key=self.api_key)
 
         self.logger = logging.getLogger(__name__)
     
@@ -81,15 +81,15 @@ class CoHereProvider(LLMInterface):
             model = self.embedding_model_id,
             texts = [self.process_text(text)],
             input_type = input_type,
-            embedding_types = [float],
+            embedding_types = ['float'],
 
         )
 
-        if not response or not response.choices or len(response.choices) == 0 or not response.choices[0].message["content"]:
+        if not response or not response.embeddings or not response.embeddings.float:
             self.logger.error("CoHere Client : Failed to embed text.")
             return None
 
-        return response.choices[0].message["content"]
+        return response.embeddings.float[0]
         
 
 

@@ -1,6 +1,6 @@
 from helpers.config import get_settings,Settings
 import os
-
+import json
 
 class BaseController:
 
@@ -28,3 +28,8 @@ class BaseController:
             os.makedirs(database_path)
         
         return database_path
+    
+    def get_json_serializable_object(self, info):
+        return json.loads(
+            json.dumps(info, default=lambda x: x.__dict__)
+        )

@@ -25,3 +25,14 @@ class ResponseSignal(Enum):
     UPDATING_CONFIGURATION_SUCCESS = "Updating configuration succeeded"
     UPDATING_CONFIGURATION_FAILED = "Updating configuration failed"
     EMPTY_CONFIGUARTION_REQUEST = "Empty configuration request, Nothing changed"
+
+    PROJECT_NOT_FOUND = "Project not found"
+
+    DATA_INDEXED_SUCCESS = "Data inserted to the VectorDB Successfully"
+    DATA_INDEXED_FAILED = "Failed to insert data to the VectorDB"
+
+    VECTORDB_COLLECTION_INFO_RETRIVED_SUCCESS = "VectorDB collection information was successfully retrieved"
+    VECTORDB_COLLECTION_INFO_RETRIVED_FAILED = "Failed to retrieve VectorDB collection information"
+
+    VECTORDB_COLLECTION_SEARCH_SUCCESS = "VectorDB collection search result was successfully retrieved"
+    VECTORDB_COLLECTION_SEARCH_FAILED = "Failed to retrieve VectorDB collection search result"

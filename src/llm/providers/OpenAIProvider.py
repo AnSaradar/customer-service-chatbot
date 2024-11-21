@@ -26,6 +26,8 @@ class OpenAIProvider(LLMInterface):
             base_url = self.api_url if self.api_url and len(self.api_url) else None
         )
 
+        self.enums = OpenAIEnums
+
         self.logger = logging.getLogger(__name__)
 
 

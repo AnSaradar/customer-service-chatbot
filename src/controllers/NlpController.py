@@ -1,18 +1,20 @@
 from .BaseController import BaseController
 from models.db_schemes import Project, DataChunk
 from llm.LLMEnums import DocumentTypeEnum
+from llm.prompt_templates import TemplateParser
 import logging
 from typing import List
 
 
 class NLPController(BaseController):
     # I need the {VectorDB Client, Generation Client, Embedding Client}
-    def __init__(self, vectordb_client, generation_client, embedding_client):
+    def __init__(self, vectordb_client, generation_client, embedding_client, template_parser : TemplateParser):
         super().__init__()
 
         self.vectordb_client = vectordb_client
         self.generation_client = generation_client
         self.embedding_client = embedding_client
+        self.template_parser = template_parser
 
         self.logger = logging.getLogger(__name__)
         
@@ -47,7 +49,7 @@ class NLPController(BaseController):
         
         # step1: get collection name
         collection_name = self.create_collection_name(project_id=project.project_id)
-        self.logger.info(f"Collection name:{collection_name}")
+        #self.logger.info(f"Collection name:{collection_name}")
         # step2: manage items
         texts = [ c.chunk_text for c in chunks ]
         metadatas = [ c.chunk_metadata for c in  chunks]
@@ -57,7 +59,7 @@ class NLPController(BaseController):
             for text in texts
         ]
 
-        self.logger.info(f"Vectors:{vectors}")
+        #self.logger.info(f"Vectors:{vectors}")
 
         # step3: create collection if not exists
         _ = self.vectordb_client.create_collection(
@@ -110,6 +112,71 @@ class NLPController(BaseController):
         except Exception as e:
             self.logger.error(f"Error while searching in VectorDB: {str(e)}")
             return []
+        
+
+    def answer_rag_question(self, project : Project, question : str, limit : int = 5):
+
+        try:
+            retrieved_documents = self.search_in_vectordb_collection(
+            project = project,
+            text = question,
+            limit = limit,
+            )
+
+            if not retrieved_documents or len(retrieved_documents) == 0:
+                self.logger.error(f"No documents found for question: {question}")
+                return []
+            
+            system_prompt = self.template_parser.get_template(
+                group = "rag",
+                key = "system_prompt",
+            )
+            
+            documents_prompt = "\n".join([
+
+                self.template_parser.get_template(
+                        group = "rag",
+                        key = "document_prompt",
+                        vars = {
+                            "doc_num": i+1,
+                            "chunk_text": document.text,
+                        },
+                    )
+
+                for i,document in enumerate(retrieved_documents)
+            ])  
+
+        
+
+            footer_prompt = self.template_parser.get_template(
+                group = "rag",
+                key = "footer_prompt",
+            )
+            
+            full_prompt = "\n\n".join([documents_prompt,footer_prompt])
+            
+            chat_history = [
+                self.generation_client.construct_prompt(
+                    prompt = system_prompt ,
+                    role = self.generation_client.enums.SYSTEM.value,
+                )
+            ]
+
+            answer = self.generation_client.generate_text(
+                prompt = full_prompt,
+                chat_history = chat_history,
+            )
+
+            if not answer:
+                self.logger.error(f"Error generating answer for question: {question}")
+                return None, [], None
+
+            return answer, chat_history, full_prompt
+        
+        except Exception as e:
+            self.logger.error(f"Error while answering RAG question: {str(e)}")
+            return None, [], None
+        
     
     
     

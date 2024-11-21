@@ -39,6 +39,9 @@ class Settings(BaseSettings):
     VECTORDB_PATH : str
     VECTORDB_DISTANCE_METHOD : str
 
+    DEFAULT_LANGUAGE : str = 'en'
+    PRIMARY_LANGUAGE : str
+
 
 
 

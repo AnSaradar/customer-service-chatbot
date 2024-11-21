@@ -36,3 +36,6 @@ class ResponseSignal(Enum):
 
     VECTORDB_COLLECTION_SEARCH_SUCCESS = "VectorDB collection search result was successfully retrieved"
     VECTORDB_COLLECTION_SEARCH_FAILED = "Failed to retrieve VectorDB collection search result"
+
+    ANSWER_GENERATION_FAILED = "An error occurred while generating answer"
+    ANSWER_GENERATION_SUCCESS = "Answer generated successfully"

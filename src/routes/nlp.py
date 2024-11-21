@@ -29,7 +29,9 @@ async def index_project(request : Request, project_id : str, index_project_reque
 
     nlp_controller = NLPController(vectordb_client = request.app.vectordb_client,
                                    generation_client = request.app.generation_client,
-                                   embedding_client = request.app.embedding_client)
+                                   embedding_client = request.app.embedding_client,
+                                   template_parser = request.app.template_parser,
+                                   )
     
     chunk_model = ChunkModel(db_client = request.app.db_client) #Connect to Chunk Collection on mongo
 
@@ -47,7 +49,7 @@ async def index_project(request : Request, project_id : str, index_project_reque
 
         if len(page_chunks) > 0:
             page_no = page_no + 1
-            logger.info(f"Info from the Logger : New page_number:{page_no}")
+            #logger.info(f"Info from the Logger : New page_number:{page_no}")
         
         if not page_chunks or len(page_chunks) == 0:
             has_records = False
@@ -85,7 +87,9 @@ async def get_project_index_info(request : Request, project_id : str):
     
     nlp_controller = NLPController(vectordb_client = request.app.vectordb_client,
                                    generation_client = request.app.generation_client,
-                                   embedding_client = request.app.embedding_client)
+                                   embedding_client = request.app.embedding_client,
+                                   template_parser = request.app.template_parser,
+                                   )
     
     collection_info = nlp_controller.get_vectordb_collection_info(
         project = project_scheme,
@@ -111,7 +115,9 @@ async def index_search(request : Request, project_id : str, search_request : Ind
     
     nlp_controller = NLPController(vectordb_client = request.app.vectordb_client,
                                    generation_client = request.app.generation_client,
-                                   embedding_client = request.app.embedding_client)
+                                   embedding_client = request.app.embedding_client,
+                                   template_parser = request.app.template_parser,
+                                   )
     
     results = nlp_controller.search_in_vectordb_collection(
         project = project_scheme,
@@ -124,6 +130,38 @@ async def index_search(request : Request, project_id : str, search_request : Ind
     
     return JSONResponse(status_code=status.HTTP_200_OK, content={"signal": ResponseSignal.VECTORDB_COLLECTION_SEARCH_SUCCESS.value,
                                                              "results": BaseController().get_json_serializable_object(info = results)})
+
+
+
+@nlp_router.post("/index/answer/{project_id}")
+async def answer_user_query(request : Request, project_id : str, search_request : IndexSearchRequest):
+
+    project_model = ProjectModel(db_client = request.app.db_client)
+
+    project_scheme = await project_model.get_project_or_create_one(project_id=project_id)
+
+    if not project_scheme:
+        return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content={"signal": ResponseSignal.PROJECT_NOT_FOUND.value})
+    
+    nlp_controller = NLPController(vectordb_client = request.app.vectordb_client,
+                                   generation_client = request.app.generation_client,
+                                   embedding_client = request.app.embedding_client,
+                                   template_parser = request.app.template_parser,
+                                   )
+    
+    answer, chat_history, full_prompt = nlp_controller.answer_rag_question(
+        project = project_scheme,
+        question = search_request.text,
+        limit = search_request.limit,
+    )
+
+    if not answer:
+        return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content={"signal": ResponseSignal.ANSWER_GENERATION_FAILED.value})
+    
+    return JSONResponse(status_code=status.HTTP_200_OK, content={"signal": ResponseSignal.ANSWER_GENERATION_SUCCESS.value,
+                                                                 "answer": BaseController().get_json_serializable_object(answer),
+                                                               })
+
     
 
 

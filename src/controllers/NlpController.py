@@ -4,6 +4,7 @@ from llm.LLMEnums import DocumentTypeEnum
 from llm.prompt_templates import TemplateParser
 import logging
 from typing import List
+import time
 
 
 class NLPController(BaseController):
@@ -86,12 +87,16 @@ class NLPController(BaseController):
         
         try:
             # Convert Text to Vector
+            start_time_for_embedding = time.perf_counter() 
             vector = self.embedding_client.embed_text(
                 text = text,
                 document_type = DocumentTypeEnum.QUERY.value,
             )
+            end_time_for_embedding = time.perf_counter() 
 
-            #self.logger.info("The Vector is Ready")
+            elapsed_time_for_embedding = end_time_for_embedding - start_time_for_embedding
+
+            self.logger.info(f"Embedding Process completed in {elapsed_time_for_embedding} seconds")
             
             if not vector or len(vector) == 0:
                 self.logger.error(f"Error embedding text: {text}")
@@ -123,10 +128,13 @@ class NLPController(BaseController):
             limit = limit,
             )
 
+            start_time_for_retrieving_prompts = time.perf_counter()
+
             if not retrieved_documents or len(retrieved_documents) == 0:
                 self.logger.error(f"No documents found for question: {question}")
                 return []
             
+
             system_prompt = self.template_parser.get_template(
                 group = "rag",
                 key = "system_prompt",
@@ -151,6 +159,9 @@ class NLPController(BaseController):
             footer_prompt = self.template_parser.get_template(
                 group = "rag",
                 key = "footer_prompt",
+                vars = {
+                    "query" : question
+                }
             )
             
             full_prompt = "\n\n".join([documents_prompt,footer_prompt])
@@ -162,10 +173,22 @@ class NLPController(BaseController):
                 )
             ]
 
+            end_time_for_retrieving_prompts = time.perf_counter()
+            elapsed_time_for_retrieving_prompts = end_time_for_retrieving_prompts - start_time_for_retrieving_prompts
+
+            self.logger.info(f"Retrieving and Generating Prompts completed in {elapsed_time_for_retrieving_prompts} seconds")
+
+            start_time_for_generating = time.perf_counter()
             answer = self.generation_client.generate_text(
                 prompt = full_prompt,
                 chat_history = chat_history,
             )
+            
+            end_time_for_generating = time.perf_counter() 
+
+            elapsed_time_for_generating = end_time_for_generating - start_time_for_generating
+
+            self.logger.info(f"Answer Generating Process completed in {elapsed_time_for_generating} seconds")
 
             if not answer:
                 self.logger.error(f"Error generating answer for question: {question}")

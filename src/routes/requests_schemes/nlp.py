@@ -2,7 +2,8 @@ from pydantic import BaseModel
 from typing import Optional
 
 class IndexProjectRequest(BaseModel):
-    do_reset : Optional[int] = 0
+    project_id : str
+    do_reset : Optional[int] = 1
 
 
 class IndexSearchRequest(BaseModel):

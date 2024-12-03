@@ -33,21 +33,34 @@ async def startup():
         logger.error(f"Error connecting to MongoDB: {str(e)}")
 
     # =================LLM Initialization=================
-    llm_provider_factory = LLMProviderFactory(settings)
+    try:
+        llm_provider_factory = LLMProviderFactory(settings)
 
-    # Generation Client
-    app.generation_client = llm_provider_factory.create(provider = settings.GENERATION_BACKEND)
-    app.generation_client.set_generation_model(model_id = settings.GENERATION_MODEL_ID)
-    
-    # Embedding Client
-    app.embedding_client = llm_provider_factory.create(provider = settings.EMBEDDING_BACKEND)
-    app.embedding_client.set_embedding_model(model_id = settings.EMBEDDING_MODEL_ID, embedding_size = settings.EMBEDDING_MODEL_SIZE)
+        # Generation Client
+        app.generation_client = llm_provider_factory.create(provider = settings.GENERATION_BACKEND)
+        app.generation_client.set_generation_model(model_id = settings.GENERATION_MODEL_ID)
+        
+        # Embedding Client
+        app.embedding_client = llm_provider_factory.create(provider = settings.EMBEDDING_BACKEND)
+        app.embedding_client.set_embedding_model(model_id = settings.EMBEDDING_MODEL_ID, embedding_size = settings.EMBEDDING_MODEL_SIZE)
+
+        logger.info(f"LLM Generation Model has beed initialized : {settings.GENERATION_MODEL_ID}")
+        logger.info(f"LLM Embedding Model has beed initialized : {settings.EMBEDDING_MODEL_ID}")
+
+    except Exception as e:
+        logger.error(f"Error initializing LLM: {str(e)}")
 
     # =================VectorDB Initialization=================
-    vector_db_provider_factory = VectorDBProviderFactory(settings)
+    try:
+        vector_db_provider_factory = VectorDBProviderFactory(settings)
 
-    app.vectordb_client = vector_db_provider_factory.create(provider = settings.VECTORDB_BACKEND)
-    app.vectordb_client.connect()
+        app.vectordb_client = vector_db_provider_factory.create(provider = settings.VECTORDB_BACKEND)
+        app.vectordb_client.connect()
+
+        logger.info("VectorDB provider has been initialized successfully")
+    
+    except Exception as e:
+        logger.error(f"Error initializing VectorDB: {str(e)}")
 
     # =================Template Initialization===================
     app.template_parser = TemplateParser(

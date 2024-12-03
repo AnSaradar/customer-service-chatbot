@@ -39,3 +39,7 @@ class ResponseSignal(Enum):
 
     ANSWER_GENERATION_FAILED = "An error occurred while generating answer"
     ANSWER_GENERATION_SUCCESS = "Answer generated successfully"
+
+    Project_ALREADY_EXISTS = "Project already exists"
+    CREATE_PROJECT_FAILED = "Error while creating project"
+    CREATE_PROJECT_SUCCESS = "Project created successfully"

@@ -5,7 +5,7 @@ services:
   mongodb:
     image: mongo:7-jammy
 
-    container_name: mongodb-container
+    container_name: customer-mongodb-container
 
     ports:
       - "27007:27017"
@@ -22,7 +22,7 @@ services:
   qdrant:
     image: qdrant/qdrant
 
-    container_name: qdrant-container
+    container_name: customer-qdrant-container
 
     ports:
       - "6334:6333"

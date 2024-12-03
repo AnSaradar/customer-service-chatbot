@@ -132,7 +132,7 @@ class NLPController(BaseController):
 
             if not retrieved_documents or len(retrieved_documents) == 0:
                 self.logger.error(f"No documents found for question: {question}")
-                return []
+                return None, [], None
             
 
             system_prompt = self.template_parser.get_template(

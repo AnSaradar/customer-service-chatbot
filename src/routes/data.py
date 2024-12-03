@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, Depends, UploadFile, status, Request
+from fastapi import FastAPI, APIRouter, Depends, UploadFile, status, Request, Form
 from fastapi.responses import JSONResponse
 from controllers import DataController, ProjectController, ProcessController
 from models import ProjectModel , ChunkModel    
@@ -19,44 +19,48 @@ data_router = APIRouter(
     tags=["api_v1", "data"],
 )
 
-@data_router.post("/upload/{project_id}")
-async def upload_file(request : Request, project_id: str, file: UploadFile, app_settings: Settings = Depends(get_settings)):
-
-    project_model = ProjectModel(db_client = request.app.db_client)
-    _ = await project_model.get_project_or_create_one(project_id=project_id)
-
-
-    # Validate the uploaded file
-    logger.info(f"Info from the Logger : Current file size :{file.size}")
-    is_valid, response = DataController().validate_uploaded_file(file)
-
-    if not is_valid:
-        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content={"signal":response})
-    
-    # Get The storing path for the uploaded file  
-    project_dir_path = ProjectController().get_project_path(project_id=project_id)
-    file_path = os.path.join(project_dir_path,file.filename)
-
+@data_router.post("/upload")
+async def upload_file(request : Request, file: UploadFile, project_id: str = Form(...), app_settings: Settings = Depends(get_settings)):
+    # TODO: Modify the code, so the "is_project_exist" method return the signal also 
     try:
+        # Check if the Project exists
+        project_model = ProjectModel(db_client = request.app.db_client)
+        is_project_exist, company_schema = await project_model.is_project_exist(project_id = project_id)
+
+        if is_project_exist == False or is_project_exist is None or company_schema is None:
+            return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content={"signal": ResponseSignal.PROJECT_NOT_FOUND.value})
+
+        # Validate the uploaded file
+        logger.info(f"Info from the Logger : Current file size :{file.size}")
+        is_valid, response = DataController().validate_uploaded_file(file)
+
+        if not is_valid:
+            return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content={"signal":response})
+        
+        # Get The storing path for the uploaded file  
+        project_dir_path = ProjectController().get_project_path(project_id=project_id)
+        file_path = os.path.join(project_dir_path,file.filename)
+
+        
         async with aiofiles.open(file_path, "wb") as f:
             while chunk := await file.read(app_settings.FILE_DEFAULT_CHUNK_SIZE):
                 await f.write(chunk)
+        
+
+        return JSONResponse(status_code=status.HTTP_200_OK, content={
+            "signal": ResponseSignal.FILE_UPLOADED_SUCCESS.value,
+            "file_name": file.filename
+        })
     
     except Exception as e:
         logger.error(f"Error while uploading file: {str(e)}")
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content={"signal": ResponseSignal.FILE_UPLOADED_FAILED.value})
-    
-
-    return JSONResponse(status_code=status.HTTP_200_OK, content={
-        "signal": ResponseSignal.FILE_UPLOADED_SUCCESS.value,
-        "file_name": file.filename
-    })
 
 
 
-@data_router.post('/process/{project_id}/')
-async def process_file(request : Request, project_id : str, process_request : ProcessRequest):
-
+@data_router.post('/process')
+async def process_file(request : Request, process_request : ProcessRequest):
+    project_id = process_request.project_id
     file_id = process_request.file_id
     chunk_size = process_request.chunk_size
     overlap_size = process_request.overlap_size

@@ -1,5 +1,5 @@
 from .BaseDataModel import BaseDataModel
-from .db_schemes import DataChunk
+from .db_schemes import DataChunkSchema
 from .enums.DataBaseEnums import DataBaseEnums
 from bson.objectid import ObjectId
 from pymongo import InsertOne
@@ -11,7 +11,7 @@ class ChunkModel(BaseDataModel):
         self.collection = self.db_client[DataBaseEnums.COLLECTION_CHUNK_NAME.value]
     
 
-    async def create_chunk(self, chunk : DataChunk):
+    async def create_chunk(self, chunk : DataChunkSchema):
         result = await self.collection.insert_one(chunk.dict(by_alias=True, exclude_unset=True))
         chunk._id = result.inserted_id
         return chunk
@@ -24,7 +24,7 @@ class ChunkModel(BaseDataModel):
         if result is None:
             return None
         
-        return DataChunk(**result)
+        return DataChunkSchema(**result)
     
 
     async def insert_many_chunks(self, chunks : list, batch_size : int=100):
@@ -58,6 +58,6 @@ class ChunkModel(BaseDataModel):
         ).limit(page_size).to_list(length=None) # length=None includes all the chunks / elements
 
         return [
-            DataChunk(**record)
+            DataChunkSchema(**record)
             for record in records
         ]

@@ -1,5 +1,5 @@
 from .BaseController import BaseController
-from models.db_schemes import Project, DataChunk
+from models.db_schemes import ProjectSchema, DataChunkSchema
 from llm.LLMEnums import DocumentTypeEnum
 from llm.prompt_templates import TemplateParser
 import logging
@@ -25,12 +25,12 @@ class NLPController(BaseController):
         return f"collection_{project_id}".strip()
     
 
-    def reset_vector_db_collection(self, project : Project): # The Project here is a db scheme
+    def reset_vector_db_collection(self, project : ProjectSchema): # The Project here is a db scheme
         collection_name = self.create_collection_name(project_id=project.project_id)
         return self.vectordb_client.delete_collection(collection_name = collection_name) # Reset the VectorDB collection for the given project
     
 
-    def get_vectordb_collection_info(self, project : Project):
+    def get_vectordb_collection_info(self, project : ProjectSchema):
         collection_name = self.create_collection_name(project_id=project.project_id)
         try:
             collection_info = self.vectordb_client.get_collection_info(collection_name = collection_name)
@@ -44,7 +44,7 @@ class NLPController(BaseController):
             self.logger.error(f"Error getting {collection_name} info: {str(e)}")
             return None
     
-    def index_into_vector_db(self, project: Project, chunks: List[DataChunk],
+    def index_into_vector_db(self, project: ProjectSchema, chunks: List[DataChunkSchema],
                                    chunks_ids: List[int], 
                                    do_reset: bool = False):
         
@@ -81,7 +81,7 @@ class NLPController(BaseController):
         return True
     
 
-    def search_in_vectordb_collection(self, project : Project, text : str, limit : int = 5):
+    def search_in_vectordb_collection(self, project : ProjectSchema, text : str, limit : int = 5):
 
         collection_name = self.create_collection_name(project_id=project.project_id)
         
@@ -119,7 +119,7 @@ class NLPController(BaseController):
             return []
         
 
-    def answer_rag_question(self, project : Project, question : str, limit : int = 5):
+    def answer_rag_question(self, project : ProjectSchema, question : str, limit : int = 5):
 
         try:
             retrieved_documents = self.search_in_vectordb_collection(

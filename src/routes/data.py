@@ -2,7 +2,7 @@ from fastapi import FastAPI, APIRouter, Depends, UploadFile, status, Request
 from fastapi.responses import JSONResponse
 from controllers import DataController, ProjectController, ProcessController
 from models import ProjectModel , ChunkModel    
-from models.db_schemes import DataChunk
+from models.db_schemes import DataChunkSchema
 from models.enums import ResponseSignal
 from .requests_schemes import ProcessRequest
 from bson import json_util
@@ -109,7 +109,7 @@ async def process_file(request : Request, project_id : str, process_request : Pr
             })
     
     file_chunks_records = [
-        DataChunk(
+        DataChunkSchema(
             chunk_text = chunk.page_content,
             chunk_metadata = chunk.metadata,
             chunk_order = i+1,

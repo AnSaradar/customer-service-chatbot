@@ -61,75 +61,91 @@ async def upload_file(request : Request, file: UploadFile, project_id: str = For
 @data_router.post('/process')
 async def process_file(request : Request, process_request : ProcessRequest):
     project_id = process_request.project_id
-    file_id = process_request.file_id
     chunk_size = process_request.chunk_size
     overlap_size = process_request.overlap_size
     do_reset = process_request.do_reset
 
+    try:
+        # Check if the Project exists
+        project_model = ProjectModel(db_client = request.app.db_client)
+        is_project_exist, project_schema = await project_model.is_project_exist(project_id = project_id)
 
-    process_controller = ProcessController(project_id=project_id)
-
-    project_model = ProjectModel(db_client = request.app.db_client)
-    project = await project_model.get_project_or_create_one(project_id=project_id) # project : scheme
-
-    chunk_model = ChunkModel(db_client = request.app.db_client)
-
-    if do_reset == 1:
-        _ = await chunk_model.delete_all_chunks_by_project_id(project_id=project.id)
-
-    # # Get The storing path for the uploaded file  
-    # project_dir_path = ProjectController().get_project_path(project_id=project_id)
-    # logger.info(f"Info from the Logger : project_folder:{project_dir_path},{type(project_dir_path)}")
-    # # Process all the files in the project folder
-    # files_names = ProjectController().get_all_the_files_names_inside_folder(folder_path=project_dir_path)
-    # all_files_contents = []
-    # for file_name in files_names:
-    #     file_content = process_controller.get_file_content(file_id=file_name)
-    #     logger.info(f"Info from the Logger : file_content:{file_name},{type(file_content)}")
-    #     chunks = process_controller.process_file_content(file_content=file_content,chunk_size=chunk_size,overlap_size=overlap_size)
-    #     #logger.info(f"Info from the Logger : file_content:{chunks}")
-    #     file_info = {'file_name': file_name, 'file_content': chunks}
-    #     all_files_contents.append(file_info)
+        if is_project_exist == False or is_project_exist is None or project_schema is None:
+            return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content={"signal": ResponseSignal.PROJECT_NOT_FOUND.value})
+        
 
 
-    file_content = process_controller.get_file_content(file_id=file_id)
-    if file_content is None:
+        process_controller = ProcessController(project_id=project_id)
+
+        chunk_model = ChunkModel(db_client = request.app.db_client)
+
+        if do_reset == 1:
+            _ = await chunk_model.delete_all_chunks_by_project_id(project_id=project_schema.id)
+    
+        # Handle multiple files
+        # Get The storing path for the uploaded file  
+        project_dir_path = ProjectController().get_project_path(project_id=project_id)
+        logger.info(f"project_folder:{project_dir_path}")
+        # Process all the files in the project folder
+        files_names = ProjectController().get_all_the_files_names_inside_folder(folder_path=project_dir_path)
+        logger.info(f"All Files in project folder :{files_names}")
+        
+        all_files_chunks = []
+        for file_name in files_names:
+            file_content = process_controller.get_file_content(file_id=file_name)
+            logger.info(f"Info from the Logger : file_content:{file_name},{type(file_content)}")
+            chunks = process_controller.process_file_content(file_content=file_content,chunk_size=chunk_size,overlap_size=overlap_size)
+
+            #logger.info(f"file_content:{chunks}")
+            #logger.info(f"Chunks type:{type(chunks)}")
+            #file_info = {'file_name': file_name, 'file_content': chunks}
+            all_files_chunks.extend(chunks)
+
+
+        # file_content = process_controller.get_file_content(file_id=file_id)
+        # if file_content is None:
+        #     return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content={
+        #         "signal": ResponseSignal.FILES_PROCESSING_FAILED.value,
+        #         })
+
+
+        # file_chunks = process_controller.process_file_content(
+        #     file_content=file_content,
+        #     file_id=file_id,
+        #     chunk_size=chunk_size,
+        #     overlap_size=overlap_size
+        # )
+        
+        if all_files_chunks is None or len(all_files_chunks) == 0 :
+
+            return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content={
+                "signal": ResponseSignal.FILES_PROCESSING_FAILED.value,
+                })
+    
+        file_chunks_records = [
+            DataChunkSchema(
+                chunk_text = chunk.page_content,
+                chunk_metadata = chunk.metadata,
+                chunk_order = i+1,
+                chunk_project_id = project_schema.id
+            )
+
+            for i , chunk in enumerate(all_files_chunks)
+        ]
+        
+        
+        num_records = await chunk_model.insert_many_chunks(chunks = file_chunks_records)
+
+
+        return JSONResponse(status_code=status.HTTP_200_OK,content=
+                            {"signal": ResponseSignal.FILES_PROCESSING_SUCCESS.value,
+                             "Number of processed files": len(files_names),
+                            "Number of added chunks": json.loads(json_util.dumps(num_records))})
+    
+    except Exception as e:
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content={
-            "signal": ResponseSignal.FILES_PROCESSING_FAILED.value,
-            })
-
-
-    file_chunks = process_controller.process_file_content(
-        file_content=file_content,
-        file_id=file_id,
-        chunk_size=chunk_size,
-        overlap_size=overlap_size
-    )
-    
-    if file_chunks is None or len(file_chunks) == 0 :
-
-        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content={
-            "signal": ResponseSignal.FILES_PROCESSING_FAILED.value,
-            })
-    
-    file_chunks_records = [
-        DataChunkSchema(
-            chunk_text = chunk.page_content,
-            chunk_metadata = chunk.metadata,
-            chunk_order = i+1,
-            chunk_project_id = project.id
-        )
-
-        for i , chunk in enumerate(file_chunks)
-    ]
-    
-    
-    num_records = await chunk_model.insert_many_chunks(chunks = file_chunks_records)
-
-
-    return JSONResponse(status_code=status.HTTP_200_OK,content=
-                        {"signal": ResponseSignal.FILES_PROCESSING_SUCCESS.value,
-                        "Number of added chunks": json.loads(json_util.dumps(num_records))})
+                "signal": ResponseSignal.FILES_PROCESSING_FAILED.value,
+                })
 
     
 

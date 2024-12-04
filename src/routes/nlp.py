@@ -5,7 +5,7 @@ from helpers.config import get_settings, Settings, update_env_file_configuration
 from controllers import NLPController, BaseController
 from models import ProjectModel , ChunkModel  
 from models.enums import ResponseSignal
-from .requests_schemes import IndexProjectRequest, IndexSearchRequest
+from .requests_schemes import IndexProjectRequest, IndexSearchRequest, InfoProjectRequest
 import logging
 from bson import json_util
 import json
@@ -85,36 +85,45 @@ nlp_router = APIRouter(
 
 
 
-@nlp_router.get("/index/info/{project_id}")
-async def get_project_index_info(request : Request, project_id : str):
+@nlp_router.get("/index/info")
+async def get_project_index_info(request : Request, info_request: InfoProjectRequest):
     
-    project_model = ProjectModel(db_client = request.app.db_client)
+    project_id = info_request.project_id
 
-    project_scheme = await project_model.get_project_or_create_one(project_id=project_id)
+    try:
+        # Check if the Project exists
+        project_model = ProjectModel(db_client = request.app.db_client)
+        is_project_exist, project_schema = await project_model.is_project_exist(project_id = project_id)
 
-    if not project_scheme:
-        return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content={"signal": ResponseSignal.PROJECT_NOT_FOUND.value})
-    
-    nlp_controller = NLPController(vectordb_client = request.app.vectordb_client,
-                                   generation_client = request.app.generation_client,
-                                   embedding_client = request.app.embedding_client,
-                                   template_parser = request.app.template_parser,
-                                   )
-    
-    collection_info = nlp_controller.get_vectordb_collection_info(
-        project = project_scheme,
-    )
+        if is_project_exist == False or is_project_exist is None or project_schema is None:
+            return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content={"signal": ResponseSignal.PROJECT_NOT_FOUND.value})
+        
+        nlp_controller = NLPController(vectordb_client = request.app.vectordb_client,
+                                    generation_client = request.app.generation_client,
+                                    embedding_client = request.app.embedding_client,
+                                    template_parser = request.app.template_parser,
+                                    )
+        
+        collection_info = nlp_controller.get_vectordb_collection_info(
+            project = project_schema,
+        )
 
-    if collection_info is None:
-        return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content={"signal": ResponseSignal.VECTORDB_COLLECTION_INFO_RETRIVED_FAILED.value})
-    
-    return JSONResponse(status_code=status.HTTP_200_OK, content={"signal": ResponseSignal.VECTORDB_COLLECTION_INFO_RETRIVED_SUCCESS.value,
-                                                             "collection_info": BaseController().get_json_serializable_object(info = collection_info)})
+        if collection_info is None:
+            return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content={"signal": ResponseSignal.VECTORDB_COLLECTION_INFO_RETRIVED_FAILED.value})
+        
+        return JSONResponse(status_code=status.HTTP_200_OK, content={"signal": ResponseSignal.VECTORDB_COLLECTION_INFO_RETRIVED_SUCCESS.value,
+                                                                "collection_info": BaseController().get_json_serializable_object(info = collection_info)})
+
+    except Exception as e:
+        logger.error(f"Error while fetching vector database information:{e}")
+        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST,
+                             content={"signal": ResponseSignal.VECTORDB_COLLECTION_INFO_RETRIVED_FAILED.value})
 
 
+@nlp_router.post("/index/search")
+async def index_search(request : Request, search_request : IndexSearchRequest):
 
-@nlp_router.post("/index/search/{project_id}")
-async def index_search(request : Request, project_id : str, search_request : IndexSearchRequest):
+    project_id = search_request.project_id
 
     project_model = ProjectModel(db_client = request.app.db_client)
 
@@ -143,36 +152,45 @@ async def index_search(request : Request, project_id : str, search_request : Ind
 
 
 
-@nlp_router.post("/index/answer/{project_id}")
-async def answer_user_query(request : Request, project_id : str, search_request : IndexSearchRequest):
+@nlp_router.post("/index/answer")
+async def answer_user_query(request : Request,search_request : IndexSearchRequest):
 
-    project_model = ProjectModel(db_client = request.app.db_client)
-
-    project_scheme = await project_model.get_project_or_create_one(project_id=project_id)
-
-    if not project_scheme:
-        return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content={"signal": ResponseSignal.PROJECT_NOT_FOUND.value})
+    project_id = search_request.project_id
     
-    nlp_controller = NLPController(vectordb_client = request.app.vectordb_client,
-                                   generation_client = request.app.generation_client,
-                                   embedding_client = request.app.embedding_client,
-                                   template_parser = request.app.template_parser,
-                                   )
-    
-    answer, chat_history, full_prompt = nlp_controller.answer_rag_question(
-        project = project_scheme,
-        question = search_request.text,
-        limit = search_request.limit,
-    )
+    try:
 
-    if not answer:
-        return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content={"signal": ResponseSignal.ANSWER_GENERATION_FAILED.value})
-    
-    return JSONResponse(status_code=status.HTTP_200_OK, content={"signal": ResponseSignal.ANSWER_GENERATION_SUCCESS.value,
-                                                                 "answer": BaseController().get_json_serializable_object(answer),
-                                                               })
+        # Check if the Project exists
+        project_model = ProjectModel(db_client = request.app.db_client)
+        is_project_exist, project_schema = await project_model.is_project_exist(project_id = project_id)
+
+        if is_project_exist == False or is_project_exist is None or project_schema is None:
+            return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content={"signal": ResponseSignal.PROJECT_NOT_FOUND.value})
+        
+        
+        
+        nlp_controller = NLPController(vectordb_client = request.app.vectordb_client,
+                                    generation_client = request.app.generation_client,
+                                    embedding_client = request.app.embedding_client,
+                                    template_parser = request.app.template_parser,
+                                    )
+        
+        answer, chat_history, full_prompt = nlp_controller.answer_rag_question(
+            project = project_schema,
+            question = search_request.text,
+            limit = search_request.limit,
+        )
+
+        if not answer:
+            return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content={"signal": ResponseSignal.ANSWER_GENERATION_FAILED.value})
+        
+        return JSONResponse(status_code=status.HTTP_200_OK, content={"signal": ResponseSignal.ANSWER_GENERATION_SUCCESS.value,
+                                                                    "answer": BaseController().get_json_serializable_object(answer),
+                                                                })
 
     
+    except Exception as e:
+        logger.error(f"Error while answering user query: {e}")
+        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content={"signal": ResponseSignal.ANSWER_GENERATION_FAILED.value})
 
 
 

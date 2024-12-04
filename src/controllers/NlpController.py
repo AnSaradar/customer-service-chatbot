@@ -26,9 +26,13 @@ class NLPController(BaseController):
     
 
     def reset_vector_db_collection(self, project : ProjectSchema): # The Project here is a db scheme
-        collection_name = self.create_collection_name(project_id=project.project_id)
-        return self.vectordb_client.delete_collection(collection_name = collection_name) # Reset the VectorDB collection for the given project
-    
+        try:
+            collection_name = self.create_collection_name(project_id=project.project_id)
+            return self.vectordb_client.delete_collection(collection_name = collection_name) # Reset the VectorDB collection for the given project
+        
+        except Exception as e:
+            self.logger.error(f"Failed to reset the VectorDB collection: {e}")
+            return None
 
     def get_vectordb_collection_info(self, project : ProjectSchema):
         collection_name = self.create_collection_name(project_id=project.project_id)
@@ -47,38 +51,43 @@ class NLPController(BaseController):
     def index_into_vector_db(self, project: ProjectSchema, chunks: List[DataChunkSchema],
                                    chunks_ids: List[int], 
                                    do_reset: bool = False):
+        try:
+
+            # step1: get collection name
+            collection_name = self.create_collection_name(project_id=project.project_id)
+            #self.logger.info(f"Collection name:{collection_name}")
+            # step2: manage items
+            texts = [ c.chunk_text for c in chunks ]
+            metadatas = [ c.chunk_metadata for c in  chunks]
+            vectors = [
+                self.embedding_client.embed_text(text=text, 
+                                                document_type=DocumentTypeEnum.DOCUMENT.value)
+                for text in texts
+            ]
+
+            #self.logger.info(f"Vectors:{vectors}")
+
+            # step3: create collection if not exists
+            _ = self.vectordb_client.create_collection(
+                collection_name=collection_name,
+                embedding_size=self.embedding_client.embedding_size,
+                do_reset=do_reset,
+            )
+
+            # step4: insert into vector db
+            _ = self.vectordb_client.insert_many(
+                collection_name=collection_name,
+                texts=texts,
+                metadatas=metadatas,
+                vectors=vectors,
+                record_ids=chunks_ids,
+            )
+
+            return True
         
-        # step1: get collection name
-        collection_name = self.create_collection_name(project_id=project.project_id)
-        #self.logger.info(f"Collection name:{collection_name}")
-        # step2: manage items
-        texts = [ c.chunk_text for c in chunks ]
-        metadatas = [ c.chunk_metadata for c in  chunks]
-        vectors = [
-            self.embedding_client.embed_text(text=text, 
-                                             document_type=DocumentTypeEnum.DOCUMENT.value)
-            for text in texts
-        ]
-
-        #self.logger.info(f"Vectors:{vectors}")
-
-        # step3: create collection if not exists
-        _ = self.vectordb_client.create_collection(
-            collection_name=collection_name,
-            embedding_size=self.embedding_client.embedding_size,
-            do_reset=do_reset,
-        )
-
-        # step4: insert into vector db
-        _ = self.vectordb_client.insert_many(
-            collection_name=collection_name,
-            texts=texts,
-            metadatas=metadatas,
-            vectors=vectors,
-            record_ids=chunks_ids,
-        )
-
-        return True
+        except Exception as e:
+            self.logger.error(f"Failed to index collection to the VectorDB: {e}")
+            return False
     
 
     def search_in_vectordb_collection(self, project : ProjectSchema, text : str, limit : int = 5):

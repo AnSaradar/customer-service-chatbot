@@ -49,18 +49,23 @@ class ProjectModel(BaseDataModel):
 
     async def get_all_projects(self, page : int=1, page_size: int=10): 
 
-        # We applied basic pagination
-        total_documents_count = await self.collection.count_documents()
+        try:
+            # We applied basic pagination
+            total_documents_count = await self.collection.count_documents({})
 
-        total_pages = total_documents_count // page_size
-        if total_documents_count % page_size > 0:
-            total_pages += 1
+            total_pages = total_documents_count // page_size
+            if total_documents_count % page_size > 0:
+                total_pages += 1
 
-        cursor = self.collection.find().skip((page - 1)*page_size).limit(page_size)
+            cursor = self.collection.find().skip((page - 1)*page_size).limit(page_size)
 
-        projects = []
-        async for project in cursor:
-            projects.append(ProjectSchema(**project))
+            projects = []
+            async for project in cursor:
+                projects.append(ProjectSchema(**project))
+            
+            return projects, total_pages
         
-        return projects, total_pages
+        except Exception as e:
+            self.logger.error(f"An error occurred while fetching all projects: {str(e)}")
+            return None
 

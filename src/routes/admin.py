@@ -12,12 +12,15 @@ import logging
 from bson import json_util
 import json
 
-logger = logging.getLogger('uvicorn.error')
+
+logger = logging.getLogger(__name__)
 
 admin_router = APIRouter(
     prefix="/api/v1/admin",
     tags=["api_v1", "admin"],
 )
+
+# TODO: Endpoint to set the main project 
 
 @admin_router.post("/project/create")
 async def create_project(request: Request, create_project_request: CreateProjectRequest):
@@ -47,8 +50,14 @@ async def create_project(request: Request, create_project_request: CreateProject
         logger.error(f"Error while creating project: {str(e)}")
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content={"signal": ResponseSignal.CREATE_PROJECT_FAILED.value})
 
-        
 
+# TODO: Get all the files content 
+# TODO: Get all the files of the project
+
+# @admin_router.get("/project/get_all")
+# async def get_all_projects(request: Request):
+#     try:
+#         project_model = ProjectModel(db_client = request.app.db_client)
         
 
 

@@ -43,3 +43,6 @@ class ResponseSignal(Enum):
     Project_ALREADY_EXISTS = "Project already exists"
     CREATE_PROJECT_FAILED = "Error while creating project"
     CREATE_PROJECT_SUCCESS = "Project created successfully"
+
+    GETTING_CONFIGURATION_SUCCESS = "Configuration data retrieved successfully"
+    GETTING_CONFIGURATION_FAILED = "Failed to retrieve configuration data"

@@ -6,8 +6,8 @@ from controllers import DataController, ProjectController, ProcessController
 from routes.requests_schemes import CreateProjectRequest
 from models.enums import ResponseSignal
 from .requests_schemes import ConfigUpdateRequest
-from models import ProjectModel
-from models.db_schemes import ProjectSchema
+from models import ProjectModel, ConfigModel
+from models.db_schemes import ProjectSchema, ConfigSchema
 import logging
 from bson import json_util
 import json
@@ -65,25 +65,32 @@ async def create_project(request: Request, create_project_request: CreateProject
 
 
 
-@admin_router.post("/config/update/")
-async def update_config(config_update_request: ConfigUpdateRequest, app_settings: Settings = Depends(get_settings)):
-    # #check if the reqeuest is empty
-    # logger.info(f"Request: {config_update_request.dict()}")
-    # logger.error(f"Empty Request: {not bool(config_update_request.dict())}")
-    # if not bool(config_update_request.dict()):
-    #     return JSONResponse(status_code=status.HTTP_200_OK, content={"signal": ResponseSignal.EMPTY_CONFIGUARTION_REQUEST.value})
+@admin_router.post("/config/update")
+async def update_config(request: Request, config_update_request: ConfigSchema, app_settings: Settings = Depends(get_settings)):
+
+    logger.info(f"CONFIG Request:\n {config_update_request.dict()}")
+
     try:
-        # if hasattr(app_settings, request.key):
-        #     # Update in-memory dictionary
-        #     await update_env_file_configuration(updated_config)
-        #     return JSONResponse(status_code=status.HTTP_200_OK, content={"signal": ResponseSignal.UPDATING_CONFIGURATION_SUCCESS.value})
-        # else:
-        #     return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content={"signal":ResponseSignal.INVALID_CONFIGRATION_KEY.value})
-        await update_env_file_configuration(config_update_request.dict()) 
+        config_model = ConfigModel(db_client = request.app.db_client)
+        #config_schema = ConfigSchema(**config_update_request.dict())
+            
+        _ =await config_model.update(new_config = config_update_request)
+        
         return JSONResponse(status_code=status.HTTP_200_OK, content={"signal": ResponseSignal.UPDATING_CONFIGURATION_SUCCESS.value})
     
     except Exception as e:
         logger.error(f"Error while updating the config: {str(e)}")
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content={"signal":ResponseSignal.UPDATING_CONFIGURATION_FAILED.value})
 
+
+@admin_router.get("/config/get")
+async def get_admin_config(request: Request, app_settings: Settings = Depends(get_settings)):
+    try:
+        config_model = ConfigModel(db_client= request.app.db_client)
+        config_data = await config_model.load_config()
+        return JSONResponse(status_code=status.HTTP_200_OK, content={"signal": ResponseSignal.GETTING_CONFIGURATION_SUCCESS.value, "Admin Configuration": config_data.dict()})
+    except Exception as e:
+        logger.error(f"Error while getting the config: {str(e)}")
+        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content={"signal": ResponseSignal.GETTING_CONFIGURATION_FAILED.value})
+    
 

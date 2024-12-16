@@ -16,7 +16,9 @@ logging.basicConfig(
     handlers=[
         logging.StreamHandler(),  # Logs to the console
     ]
+    
 )
+
 logger = logging.getLogger(__name__)
 
 @app.on_event("startup")

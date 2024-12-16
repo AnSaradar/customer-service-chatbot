@@ -185,6 +185,7 @@ async def answer_user_query(request : Request,search_request : IndexSearchReques
         
         return JSONResponse(status_code=status.HTTP_200_OK, content={"signal": ResponseSignal.ANSWER_GENERATION_SUCCESS.value,
                                                                     "answer": BaseController().get_json_serializable_object(answer),
+                                                                    "full_prompt": BaseController().get_json_serializable_object(full_prompt),
                                                                 })
 
     

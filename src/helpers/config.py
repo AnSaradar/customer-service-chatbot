@@ -51,6 +51,8 @@ class Settings(BaseSettings):
 def get_settings():
     return Settings()
 
+
+
 def format_value(value):
     """
     Format the value based on its type for the .env file.

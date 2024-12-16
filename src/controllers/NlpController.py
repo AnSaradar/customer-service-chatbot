@@ -128,7 +128,7 @@ class NLPController(BaseController):
             return []
         
 
-    def answer_rag_question(self, project : ProjectSchema, question : str, limit : int = 5):
+    def answer_rag_question(self, project : ProjectSchema, question : str, config : dict, limit : int = 5):
 
         try:
             retrieved_documents = self.search_in_vectordb_collection(
@@ -143,10 +143,14 @@ class NLPController(BaseController):
                 self.logger.error(f"No documents found for question: {question}")
                 return None, [], None
             
-
+            
             system_prompt = self.template_parser.get_template(
                 group = "rag",
                 key = "system_prompt",
+                vars={
+                    "contact_phone": config.contact_phone,
+                    "contact_email": config.contact_email,
+                }
             )
             
             documents_prompt = "\n".join([

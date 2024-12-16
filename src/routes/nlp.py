@@ -3,7 +3,7 @@ from fastapi.responses import JSONResponse
 import os
 from helpers.config import get_settings, Settings, update_env_file_configuration
 from controllers import NLPController, BaseController
-from models import ProjectModel , ChunkModel  
+from models import ProjectModel , ChunkModel, ConfigModel 
 from models.enums import ResponseSignal
 from .requests_schemes import IndexProjectRequest, IndexSearchRequest, InfoProjectRequest
 import logging
@@ -174,9 +174,13 @@ async def answer_user_query(request : Request,search_request : IndexSearchReques
                                     template_parser = request.app.template_parser,
                                     )
         
+        config_model = ConfigModel(db_client= request.app.db_client)
+        config_info = await config_model.load_config()
+        
         answer, chat_history, full_prompt = nlp_controller.answer_rag_question(
             project = project_schema,
             question = search_request.text,
+            config = config_info.dict(),
             limit = search_request.limit,
         )
 

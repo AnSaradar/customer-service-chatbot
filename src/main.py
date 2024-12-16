@@ -5,6 +5,7 @@ from vectordb import VectorDBProviderFactory
 from llm.prompt_templates import TemplateParser
 from motor.motor_asyncio import AsyncIOMotorClient
 from helpers.config import Settings, get_settings
+from controllers import AdminController
 import logging
 
 
@@ -31,6 +32,9 @@ async def startup():
         app.mongo_conn = AsyncIOMotorClient(settings.MONGODB_URL)
         app.db_client = app.mongo_conn[settings.MONGODB_DATABASE]
         logger.info(f"Connected to MongoDB at {settings.MONGODB_URL}")
+
+        is_config_initilized = await AdminController(db_client=app.db_client).initilze_admin_config()
+        logger.info(f"Config initialization:{is_config_initilized}")
     except Exception as e:
         logger.error(f"Error connecting to MongoDB: {str(e)}")
 

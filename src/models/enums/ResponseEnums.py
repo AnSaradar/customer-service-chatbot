@@ -46,3 +46,6 @@ class ResponseSignal(Enum):
 
     GETTING_CONFIGURATION_SUCCESS = "Configuration data retrieved successfully"
     GETTING_CONFIGURATION_FAILED = "Failed to retrieve configuration data"
+
+    GETTING_PROJECT_FAILED = "Failed to retrieve project data"
+    GETTING_PROJECT_SUCCESS = "Project retrieved successfully"

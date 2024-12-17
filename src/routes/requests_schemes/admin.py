@@ -12,6 +12,9 @@ class CreateProjectRequest(BaseModel):
     #         raise ValueError("Project ID must only contain alphanumeric characters.")
     #     return value
 
+class GetProjectDataRequest(BaseModel):
+    project_id: str = Field(..., min_length=1) # to handle empty
+
 class ConfigUpdateRequest(BaseModel):
     tempreature : float 
     contact_email : str

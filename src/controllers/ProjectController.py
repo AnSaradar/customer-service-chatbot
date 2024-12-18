@@ -50,8 +50,11 @@ class ProjectController(BaseController):
                 elif os.path.isdir(item_path):
                     shutil.rmtree(item_path)  # Remove the directory and its contents
             self.logger.info("All files and directories inside the folder have been deleted.")
+            return True
         except FileNotFoundError:
             self.logger.error("The specified folder path does not exist.")
+            return False
         except Exception as e:
-            self.logger.error(f"An error occurred: {e}") 
+            self.logger.error(f"An error occurred: {e}")
+            return False
        

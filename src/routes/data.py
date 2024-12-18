@@ -143,6 +143,12 @@ async def process_file(request : Request, process_request : ProcessRequest):
                 "signal": signal,
                 })
 
+        project_controller = ProjectController(project_id=project_id)
+
+        is_deleted = project_controller.delete_all_files_in_folder(project_id=project_id)
+
+        if is_deleted == False:
+            logger.error(f"Project :{project_id} deletion failed")
 
         return JSONResponse(status_code=status.HTTP_200_OK,content=
                             {"signal": ResponseSignal.FILES_PROCESSING_SUCCESS.value,

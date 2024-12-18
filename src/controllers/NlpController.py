@@ -21,13 +21,13 @@ class NLPController(BaseController):
         
 
     
-    def create_collection_name(self, project_id : str): # To standarize the name of the VectorDB collection, each db may have a different naming scheme
+    def create_collection_name(project_id : str): # To standarize the name of the VectorDB collection, each db may have a different naming scheme
         return f"collection_{project_id}".strip()
     
 
     def reset_vector_db_collection(self, project : ProjectSchema): # The Project here is a db scheme
         try:
-            collection_name = self.create_collection_name(project_id=project.project_id)
+            collection_name = NLPController.create_collection_name(project_id=project.project_id)
             return self.vectordb_client.delete_collection(collection_name = collection_name) # Reset the VectorDB collection for the given project
         
         except Exception as e:
@@ -54,8 +54,8 @@ class NLPController(BaseController):
         try:
 
             # step1: get collection name
-            collection_name = self.create_collection_name(project_id=project.project_id)
-            #self.logger.info(f"Collection name:{collection_name}")
+            collection_name = NLPController.create_collection_name(project_id=project.project_id)
+            self.logger.info(f"Collection name:{collection_name}")
             # step2: manage items
             texts = [ c.chunk_text for c in chunks ]
             metadatas = [ c.chunk_metadata for c in  chunks]
@@ -65,7 +65,7 @@ class NLPController(BaseController):
                 for text in texts
             ]
 
-            #self.logger.info(f"Vectors:{vectors}")
+            self.logger.info(f"Vectors:{type(vectors)}")
 
             # step3: create collection if not exists
             _ = self.vectordb_client.create_collection(
@@ -92,7 +92,7 @@ class NLPController(BaseController):
 
     def search_in_vectordb_collection(self, project : ProjectSchema, text : str, limit : int = 5):
 
-        collection_name = self.create_collection_name(project_id=project.project_id)
+        collection_name = NLPController.create_collection_name(project_id=project.project_id)
         
         try:
             # Convert Text to Vector

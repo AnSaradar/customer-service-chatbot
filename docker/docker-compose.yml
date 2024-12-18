@@ -17,6 +17,8 @@ services:
       - backend
     
     restart: always
+    
+    #command: ["mongod", "--replSet", "rs0"]
 
   
   qdrant:

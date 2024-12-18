@@ -33,7 +33,7 @@ async def startup():
         app.db_client = app.mongo_conn[settings.MONGODB_DATABASE]
         logger.info(f"Connected to MongoDB at {settings.MONGODB_URL}")
 
-        is_config_initilized = await AdminController(db_client=app.db_client).initilze_admin_config()
+        is_config_initilized = await AdminController(mongo_conn=app.mongo_conn, db_client=app.db_client).initilze_admin_config()
         logger.info(f"Config initialization:{is_config_initilized}")
     except Exception as e:
         logger.error(f"Error connecting to MongoDB: {str(e)}")

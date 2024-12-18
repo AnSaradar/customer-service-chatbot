@@ -49,3 +49,6 @@ class ResponseSignal(Enum):
 
     GETTING_PROJECT_FAILED = "Failed to retrieve project data"
     GETTING_PROJECT_SUCCESS = "Project retrieved successfully"
+
+    DELETE_PROJECT_SUCCESS = "Project deleted successfully"
+    DELETE_PROJECT_FAILED = "Failed to delete project"

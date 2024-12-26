@@ -52,3 +52,6 @@ class ResponseSignal(Enum):
 
     DELETE_PROJECT_SUCCESS = "Project deleted successfully"
     DELETE_PROJECT_FAILED = "Failed to delete project"
+
+    SUPER_ADMIN_LOGIN_FAILED  = "An error occurred during login"
+    SUPER_ADMIN_WRONG_AUTH = "Incorrect username or password"

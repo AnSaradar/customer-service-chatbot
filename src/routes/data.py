@@ -1,6 +1,6 @@
 from fastapi import FastAPI, APIRouter, Depends, UploadFile, status, Request, Form
 from fastapi.responses import JSONResponse
-from controllers import DataController, ProjectController, ProcessController, NLPController
+from controllers import DataController, ProjectController, ProcessController, NLPController, AuthController
 from models import ProjectModel , ChunkModel    
 from models.db_schemes import DataChunkSchema
 from models.enums import ResponseSignal
@@ -19,8 +19,11 @@ data_router = APIRouter(
     tags=["api_v1", "data"],
 )
 
+auth_controller = AuthController()
+
 @data_router.post("/upload")
-async def upload_file(request : Request, file: UploadFile, project_id: str = Form(...), app_settings: Settings = Depends(get_settings)):
+async def upload_file(request : Request, file: UploadFile, project_id: str = Form(...),
+                       app_settings: Settings = Depends(get_settings), payload: dict = Depends(auth_controller.validate_token)):
     # TODO: Modify the code, so the "is_project_exist" method return the signal also 
     try:
         # Check if the Project exists
@@ -59,7 +62,7 @@ async def upload_file(request : Request, file: UploadFile, project_id: str = For
 
 
 @data_router.post('/process')
-async def process_file(request : Request, process_request : ProcessRequest):
+async def process_file(request : Request, process_request : ProcessRequest, payload: dict = Depends(auth_controller.validate_token)):
     project_id = process_request.project_id
     chunk_size = process_request.chunk_size
     overlap_size = process_request.overlap_size

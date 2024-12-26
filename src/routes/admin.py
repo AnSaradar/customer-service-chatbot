@@ -2,7 +2,7 @@ from fastapi import FastAPI, APIRouter, Depends, UploadFile, status, Request
 from fastapi.responses import JSONResponse
 import os
 from helpers.config import get_settings, Settings
-from controllers import BaseController, AdminController, NLPController
+from controllers import BaseController, AdminController, NLPController, AuthController
 from routes.requests_schemes import CreateProjectRequest, GetProjectDataRequest
 from models.enums import ResponseSignal
 from .requests_schemes import ConfigUpdateRequest
@@ -20,10 +20,12 @@ admin_router = APIRouter(
     tags=["api_v1", "admin"],
 )
 
+auth_controller = AuthController()
+
 # TODO: Endpoint to set the main project 
 
 @admin_router.post("/project/create")
-async def create_project(request: Request, create_project_request: CreateProjectRequest):
+async def create_project(request: Request, create_project_request: CreateProjectRequest,  payload: dict = Depends(auth_controller.validate_token)):
     project_id = create_project_request.project_id
 
     try:
@@ -53,7 +55,7 @@ async def create_project(request: Request, create_project_request: CreateProject
 
 #TODO: This function will not work until we enable the Mongo Replica 
 @admin_router.delete("/project/delete")
-async def delete_project(request: Request, project_data_request: GetProjectDataRequest):
+async def delete_project(request: Request, project_data_request: GetProjectDataRequest,  payload: dict = Depends(auth_controller.validate_token)):
     project_id = project_data_request.project_id
     try:
         # Check if the Project exists
@@ -94,7 +96,7 @@ async def delete_project(request: Request, project_data_request: GetProjectDataR
 # TODO: Get all the files of the project
 
 @admin_router.get("/project/get_all_data")
-async def get_all_projects(request: Request, project_data_request: GetProjectDataRequest):
+async def get_all_projects(request: Request, project_data_request: GetProjectDataRequest,  payload: dict = Depends(auth_controller.validate_token)):
     project_id = project_data_request.project_id
     try:
         # Check if the Project exists
@@ -140,7 +142,7 @@ async def get_all_projects(request: Request, project_data_request: GetProjectDat
 
 
 @admin_router.post("/config/update")
-async def update_config(request: Request, config_update_request: ConfigSchema, app_settings: Settings = Depends(get_settings)):
+async def update_config(request: Request, config_update_request: ConfigSchema, app_settings: Settings = Depends(get_settings), payload: dict = Depends(auth_controller.validate_token)):
 
     logger.info(f"CONFIG Request:\n {config_update_request.dict()}")
 
@@ -158,7 +160,7 @@ async def update_config(request: Request, config_update_request: ConfigSchema, a
 
 
 @admin_router.get("/config/get")
-async def get_admin_config(request: Request, app_settings: Settings = Depends(get_settings)):
+async def get_admin_config(request: Request, app_settings: Settings = Depends(get_settings), payload: dict = Depends(auth_controller.validate_token)):
     try:
         config_model = ConfigModel(db_client= request.app.db_client)
         config_data = await config_model.load_config()

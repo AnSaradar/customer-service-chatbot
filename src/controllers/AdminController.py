@@ -1,7 +1,7 @@
 from .BaseController import BaseController
 from .NlpController import NLPController
 from models.db_schemes import ConfigSchema
-from models import ConfigModel, ProjectModel
+from models import SuperAdminModel
 from models.enums import DataBaseEnums
 import logging
 from pymongo.errors import PyMongoError
@@ -14,7 +14,7 @@ class AdminController(BaseController):
         self.mongo_conn = mongo_conn
         self.logger = logging.getLogger(__name__)
     
-    async def initilze_admin_config(self):
+    async def init_admin_config(self):
 
         self.logger.info("Initializing default configuration")
         collection = self.db_client[DataBaseEnums.COLLECTION_CONFIG_NAME.value]
@@ -37,6 +37,22 @@ class AdminController(BaseController):
                 return False
 
         return True
+    
+    async def init_super_admin(self):
+        try:
+            self.logger.info("Initializing default super admin")
+
+            super_admin_model = SuperAdminModel(db_client = self.db_client)
+
+            _ = await super_admin_model.initialize_super_admin()
+
+            self.logger.info("Default super admin initialized.")
+            return True
+        except Exception as e:
+            self.logger.error(f"Failed to initialize super admin: {e}")
+            return False
+            
+
     
     #TODO: SET THE MONGO REPLICA TO ENABLE THIS FUNCTION
     async def project_transactional_deletion(self, project_schema):

@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from routes import base_router, data_router, admin_router, nlp_router
+from routes import base_router, data_router, admin_router, nlp_router, auth_router
 from llm import LLMProviderFactory
 from vectordb import VectorDBProviderFactory
 from llm.prompt_templates import TemplateParser
@@ -24,17 +24,21 @@ logger = logging.getLogger(__name__)
 
 @app.on_event("startup")
 async def startup():
-    # App Configurations
+    # =================App Configurations=================
     settings = get_settings()
 
-    # Mongo Database Initilization
+    # =================Mongo Database Initilization=================
     try:
         app.mongo_conn = AsyncIOMotorClient(settings.MONGODB_URL)
         app.db_client = app.mongo_conn[settings.MONGODB_DATABASE]
         logger.info(f"Connected to MongoDB at {settings.MONGODB_URL}")
 
-        is_config_initilized = await AdminController(mongo_conn=app.mongo_conn, db_client=app.db_client).initilze_admin_config()
+        is_config_initilized = await AdminController(mongo_conn=app.mongo_conn, db_client=app.db_client).init_admin_config()
         logger.info(f"Config initialization:{is_config_initilized}")
+        
+        is_super_admin_initilized = await AdminController(mongo_conn=app.mongo_conn, db_client=app.db_client).init_super_admin()
+        logger.info(f"Super Admin initialization:{is_super_admin_initilized}")
+        
     except Exception as e:
         logger.error(f"Error connecting to MongoDB: {str(e)}")
 
@@ -87,3 +91,4 @@ app.include_router(base_router)
 app.include_router(data_router)
 app.include_router(admin_router)
 app.include_router(nlp_router)
+app.include_router(auth_router)

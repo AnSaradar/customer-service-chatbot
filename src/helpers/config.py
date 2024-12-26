@@ -42,6 +42,13 @@ class Settings(BaseSettings):
     DEFAULT_LANGUAGE : str = 'en'
     PRIMARY_LANGUAGE : str
 
+    SUPER_ADMIN_USERNAME : str
+    SUPER_ADMIN_DEFAULT_PASSWORD : str
+
+    JWT_SECRET_KEY : str
+    JWT_ALGORITHM : str
+    ACCESS_TOKEN_EXPIRE_MINUTES : int
+
 
 
 

@@ -4,7 +4,7 @@ from bson.objectid import ObjectId
 import re
 
 class ConfigSchema(BaseModel):
-    tempreature : float 
+    temperature : float 
     contact_email : str
     contact_phone : str
     file_max_size : float 
@@ -12,7 +12,7 @@ class ConfigSchema(BaseModel):
     class Config:
         arbitrary_types_allowed = True
 
-    @validator("tempreature")
+    @validator("temperature")
     def validate_temperature(cls, value):
         if not (0.0 <= value <= 1.0):
             raise ValueError("Temperature must be between 0.0 and 1.0.")

@@ -39,8 +39,11 @@ class ProjectController(BaseController):
 
 
 
-    def delete_all_files_in_folder(self, folder_path):
+    def delete_all_files_in_folder(self, project_id:str):
+        
         try:
+            folder_path = self.get_project_path(project_id=project_id)
+            self.logger.info(f"folder_path:{folder_path}")
             # Iterate through each item in the folder
             for item in os.listdir(folder_path):
                 item_path = os.path.join(folder_path, item)

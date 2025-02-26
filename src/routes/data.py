@@ -120,7 +120,7 @@ async def process_file(request : Request, process_request : ProcessRequest, payl
         # )
         
         if all_files_chunks is None or len(all_files_chunks) == 0 :
-
+            logger.error(f"Error while processing files: {str(e)}")
             return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content={
                 "signal": ResponseSignal.FILES_PROCESSING_FAILED.value,
                 })
@@ -146,7 +146,7 @@ async def process_file(request : Request, process_request : ProcessRequest, payl
                 "signal": signal,
                 })
 
-        project_controller = ProjectController(project_id=project_id)
+        project_controller = ProjectController()
 
         is_deleted = project_controller.delete_all_files_in_folder(project_id=project_id)
 
@@ -159,6 +159,7 @@ async def process_file(request : Request, process_request : ProcessRequest, payl
                             "Number of added chunks": json.loads(json_util.dumps(num_records))})
     
     except Exception as e:
+        logger.error(f"Error while processing files: {str(e)}")
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content={
                 "signal": ResponseSignal.FILES_PROCESSING_FAILED.value,
                 })

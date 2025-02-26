@@ -70,7 +70,9 @@ async def login(request: Request, super_admin_login_request: SuperAdminLoginRequ
     except Exception as e:
         logger.error(f"Error while logging in: {str(e)}")
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content={"signal": ResponseSignal.SUPER_ADMIN_LOGIN_FAILED.value})
-        
+
+
+## TODO: Endpoint for change password
 
 
 

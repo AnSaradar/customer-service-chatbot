@@ -20,10 +20,10 @@ class AdminController(BaseController):
         collection = self.db_client[DataBaseEnums.COLLECTION_CONFIG_NAME.value]
 
         default_config = {
-        "file_max_size": 10485760.0,
-        "tempreature": 0.7,
+        "file_max_size": 5,
+        "temperature": 0.7,
         "contact_email": "contact@example.com",
-        "contact_phone": "0812943874632948723"
+        "contact_phone": "+1234567890",
         }
 
         if await collection.count_documents({}) == 0:
@@ -37,6 +37,7 @@ class AdminController(BaseController):
                 return False
 
         return True
+    
     
     async def init_super_admin(self):
         try:

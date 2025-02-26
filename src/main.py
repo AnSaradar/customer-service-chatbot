@@ -6,10 +6,15 @@ from llm.prompt_templates import TemplateParser
 from motor.motor_asyncio import AsyncIOMotorClient
 from helpers.config import Settings, get_settings
 from controllers import AdminController
+from fastapi.middleware.cors import CORSMiddleware
 import logging
 
 
+
+
 app = FastAPI()
+
+# =================Logger Configurations=================
 logging.basicConfig(
     level=logging.INFO,  
     format='%(name)s - %(levelname)s - %(message)s',  # Message format
@@ -21,6 +26,16 @@ logging.basicConfig(
 )
 
 logger = logging.getLogger(__name__)
+
+# =================CORS Configurations=================
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # This allows all origins
+    allow_credentials=True,
+    allow_methods=["*"],  # This allows all HTTP methods (GET, POST, etc.)
+    allow_headers=["*"],  # This allows all headers
+)
+
 
 @app.on_event("startup")
 async def startup():
